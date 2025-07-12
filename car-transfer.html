@@ -15,111 +15,37 @@
   <div id="result" class="result"></div>
 
   <script>
-    const registrationTransferBot = {
-      questions: [
-        {
-          id: "carModel",
-          question: "🚗 What is your current car model? (e.g., Hyundai i20)",
-          validation: input => input.trim().length >= 2
-        },
-        {
-          id: "currentState",
-          question: "📍 Which state is your vehicle currently registered in? (e.g., Maharashtra)",
-          validation: input => input.trim().length >= 2
-        },
-        {
-          id: "newState",
-          question: "🏙️ Which state do you want to transfer your registration to? (e.g., Karnataka)",
-          validation: input => input.trim().length >= 2
-        },
-        {
-          id: "regNumber",
-          question: "🔢 What is your car registration number? (e.g., MH12AB1234)",
-          validation: input => /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{1,4}$/i.test(input.trim())
-        },
-        {
-          id: "manufactureYear",
-          question: "📅 What is your car's manufacturing year? (important for depreciation)",
-          validation: input => {
-            const year = parseInt(input);
-            return !isNaN(year) && year >= 1990 && year <= new Date().getFullYear();
-          }
-        },
-        {
-          id: "exShowroomPrice",
-          question: "💰 What was the ex-showroom price of your car when new? (for tax calculation)",
-          validation: input => {
-            const price = parseFloat(input.replace(/,/g, ''));
-            return !isNaN(price) && price > 0;
-          }
-        },
-        {
-          id: "lifetimeTaxPaid",
-          question: "🛡️ Have you already paid lifetime road tax in the original state? (Yes/No)",
-          validation: input => ["yes", "no"].includes(input.toLowerCase())
-        }
-      ],
+async function submitToGoogleSheet(responses) {
+  const webAppUrl = "YOUR_GOOGLE_SCRIPT_URL"; // Paste the URL here
+  const payload = {
+    carModel: responses.carModel,
+    currentState: responses.currentState,
+    newState: responses.newState,
+    regNumber: responses.regNumber,
+    manufactureYear: responses.manufactureYear,
+    exShowroomPrice: responses.exShowroomPrice,
+    lifetimeTaxPaid: responses.lifetimeTaxPaid
+  };
 
-      calculateFees: function(responses) {
-        const currentYear = new Date().getFullYear();
-        const carAge = currentYear - parseInt(responses.manufactureYear);
-        const depreciationRate = Math.min(0.8, carAge * 0.05);
-        const originalPrice = parseFloat(responses.exShowroomPrice.toString().replace(/,/g, ''));
-        const depreciatedValue = originalPrice * (1 - depreciationRate);
-        const highTaxStates = ["karnataka", "maharashtra", "tamil nadu", "delhi"];
-        const isHighTaxState = highTaxStates.includes(responses.newState.toLowerCase());
-        let taxRate = isHighTaxState ? 0.04 : 0.02;
-        let taxAmount = depreciatedValue * taxRate;
-        if (responses.lifetimeTaxPaid.toLowerCase() === "yes") taxAmount *= 0.5;
-        const rtoFee = 1000;
-        const serviceCharge = 500;
-        return {
-          depreciatedValue: depreciatedValue.toFixed(2),
-          taxAmount: taxAmount.toFixed(2),
-          rtoFee: rtoFee.toFixed(2),
-          serviceCharge: serviceCharge.toFixed(2),
-          total: (taxAmount + rtoFee + serviceCharge).toFixed(2)
-        };
-      },
+  try {
+    const response = await fetch(webAppUrl, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    alert("Data saved to Google Sheet!");
+  } catch (error) {
+    alert("Error saving data: " + error);
+  }
+}
 
-      run: function() {
-        const responses = {};
-        for (const q of this.questions) {
-          let answer;
-          let isValid = false;
-          while (!isValid) {
-            answer = prompt(q.question);
-            if (answer === null) return;
-            isValid = q.validation(answer);
-            if (!isValid) alert("Invalid input. Please try again.");
-          }
-          responses[q.id] = answer;
-        }
-        const fees = this.calculateFees(responses);
-        const resultMessage = `
-          🚘 CAR REGISTRATION TRANSFER ESTIMATE
-          ====================================
-          Vehicle: ${responses.carModel} (${responses.manufactureYear})
-          From: ${responses.currentState} (${responses.regNumber})
-          To: ${responses.newState}
-          
-          💰 FEE BREAKDOWN:
-          - Depreciated Value: ₹${fees.depreciatedValue}
-          - State Tax (${responses.newState}): ₹${fees.taxAmount}
-          - RTO Processing Fee: ₹${fees.rtoFee}
-          - Service Charges: ₹${fees.serviceCharge}
-          ------------------------------------
-          💵 TOTAL ESTIMATED COST: ₹${fees.total}
-          
-          ℹ️ Note: This is an estimate. Actual fees may vary.
-        `;
-        document.getElementById("result").innerText = resultMessage;
-      }
-    };
-
-    function startQuestionnaire() {
-      registrationTransferBot.run();
-    }
+// Modify the existing `run()` function to call this after collecting data:
+registrationTransferBot.run = function() {
+  const responses = {};
+  // ... (keep existing question logic) ...
+  const fees = this.calculateFees(responses);
+  document.getElementById("result").innerText = `Total Cost: ₹${fees.total}`;
+  submitToGoogleSheet(responses); // Add this line
+};
   </script>
 </body>
 </html>
