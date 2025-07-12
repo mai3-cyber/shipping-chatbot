@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shipping Cost Calculator</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 50px; }
+    #chatbox { background: #fff; width: 400px; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+    .message { margin: 10px 0; }
+    .bot { color: #444; }
+    .user { text-align: right; color: #007BFF; }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div id="chatbox">
+    <div id="chat">
+      <div class="message bot">🤖 Hi! Let's calculate your international shipping cost.</div>
+    </div>
+    <input type="text" id="userInput" placeholder="Type your answer..." />
+    <button onclick="next()">Send</button>
+  </div>
+  <script src="chat.js"></script>
+</body>
+</html>
