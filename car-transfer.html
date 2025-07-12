@@ -1,51 +1,148 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Car Registration Transfer Calculator</title>
+  <title>Car Registration Chatbot</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; }
-    h1 { color: #2c3e50; }
-    .result { background: #f8f9fa; padding: 15px; border-radius: 5px; }
-    button { padding: 10px 15px; background: #2c3e50; color: white; border: none; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    #chat-container {
+      height: 500px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    .bot-message {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 80%;
+      float: left;
+      clear: both;
+    }
+    .user-message {
+      background: #dcf8c6;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 80%;
+      float: right;
+      clear: both;
+    }
+    #input-area {
+      display: flex;
+      gap: 10px;
+    }
+    #user-input {
+      flex-grow: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+    }
+    button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>🚗 Car Registration Transfer</h1>
-  <button onclick="startQuestionnaire()">Start Calculator</button>
-  <div id="result" class="result"></div>
+  <h1>🚗 Car Registration Assistant</h1>
+  <div id="chat-container"></div>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="Type your answer...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
   <script>
-async function submitToGoogleSheet(responses) {
-  const webAppUrl = "YOUR_GOOGLE_SCRIPT_URL";
-  
-  try {
-    const response = await fetch(webAppUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(responses)
-    });
-    
-    const result = await response.json();
-    
-    if (result.status === "success") {
-      alert("Data saved to Google Sheet!");
-    } else {
-      alert("Error: " + result.message);
+    const questions = [
+      "🚗 What is your current car model? (e.g., Hyundai i20)",
+      "📍 Which state is your vehicle currently registered in? (e.g., Maharashtra)",
+      "🏙️ Which state do you want to transfer your registration to? (e.g., Karnataka)",
+      "🔢 What is your car registration number? (e.g., MH12AB1234)",
+      "📅 What is your car's manufacturing year?",
+      "💰 What was the ex-showroom price of your car when new?",
+      "🛡️ Have you already paid lifetime road tax in the original state? (Yes/No)"
+    ];
+
+    let currentQuestion = 0;
+    const responses = {};
+
+    function displayMessage(message, sender) {
+      const chatContainer = document.getElementById('chat-container');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = sender === 'bot' ? 'bot-message' : 'user-message';
+      messageDiv.textContent = message;
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-  } catch (error) {
-    alert("Network error: " + error.message);
-  }
-}
-// Modify the existing `run()` function to call this after collecting data:
-registrationTransferBot.run = function() {
-  const responses = {};
-  // ... (keep existing question logic) ...
-  const fees = this.calculateFees(responses);
-  document.getElementById("result").innerText = `Total Cost: ₹${fees.total}`;
-  submitToGoogleSheet(responses); // Add this line
-};
+
+    function askNextQuestion() {
+      if (currentQuestion < questions.length) {
+        displayMessage(questions[currentQuestion], 'bot');
+      } else {
+        displayMessage("Thank you! Calculating your fees...", 'bot');
+        submitToGoogleSheet();
+      }
+    }
+
+    function sendMessage() {
+      const userInput = document.getElementById('user-input');
+      const answer = userInput.value.trim();
+      
+      if (answer) {
+        displayMessage(answer, 'user');
+        
+        // Store response
+        responses[`q${currentQuestion}`] = answer;
+        
+        // Move to next question
+        currentQuestion++;
+        userInput.value = '';
+        
+        // Delay next question for better UX
+        setTimeout(askNextQuestion, 500);
+      }
+    }
+
+    async function submitToGoogleSheet() {
+      const webAppUrl = "YOUR_GOOGLE_APPS_SCRIPT_URL";
+      
+      try {
+        const response = await fetch(webAppUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            carModel: responses.q0,
+            currentState: responses.q1,
+            newState: responses.q2,
+            regNumber: responses.q3,
+            manufactureYear: responses.q4,
+            exShowroomPrice: responses.q5,
+            lifetimeTaxPaid: responses.q6
+          })
+        });
+        
+        const result = await response.text();
+        displayMessage("✅ Your data has been saved to our system!", 'bot');
+      } catch (error) {
+        displayMessage("❌ Error saving data. Please try again later.", 'bot');
+      }
+    }
+
+    // Start the conversation
+    askNextQuestion();
   </script>
 </body>
 </html>
