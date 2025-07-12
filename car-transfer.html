@@ -16,28 +16,28 @@
 
   <script>
 async function submitToGoogleSheet(responses) {
-  const webAppUrl = "YOUR_GOOGLE_SCRIPT_URL"; // Paste the URL here
-  const payload = {
-    carModel: responses.carModel,
-    currentState: responses.currentState,
-    newState: responses.newState,
-    regNumber: responses.regNumber,
-    manufactureYear: responses.manufactureYear,
-    exShowroomPrice: responses.exShowroomPrice,
-    lifetimeTaxPaid: responses.lifetimeTaxPaid
-  };
-
+  const webAppUrl = "YOUR_GOOGLE_SCRIPT_URL";
+  
   try {
     const response = await fetch(webAppUrl, {
       method: "POST",
-      body: JSON.stringify(payload)
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(responses)
     });
-    alert("Data saved to Google Sheet!");
+    
+    const result = await response.json();
+    
+    if (result.status === "success") {
+      alert("Data saved to Google Sheet!");
+    } else {
+      alert("Error: " + result.message);
+    }
   } catch (error) {
-    alert("Error saving data: " + error);
+    alert("Network error: " + error.message);
   }
 }
-
 // Modify the existing `run()` function to call this after collecting data:
 registrationTransferBot.run = function() {
   const responses = {};
